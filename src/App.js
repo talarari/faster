@@ -26,34 +26,50 @@ function getSuggestions(query) {
                 let suggestionKey = guid();
                 return reviveSuggestion(s)
                     .map(s=>({
-                        suggestion: s,
-                        pluginKey: pluginKey,
+                        value: s,
                         suggestionKey: suggestionKey
                     }));
             })
-            .scan((acc,{suggestion,pluginKey,suggestionKey})=> ({...acc,
+            .scan((acc,{value,suggestionKey})=> ({
+                ...acc,
                 [suggestionKey]:{
-                    suggestion,
+                    value,
                     pluginKey
-                }}),{})
-            .map(suggestionsByUniqueKey=> ({[pluginKey]:values(suggestionsByUniqueKey)}));
+                }
+            }),{})
+            .map(suggestionsByUniqueKey=> ({
+                [pluginKey]: {
+                    pluginKey: pluginKey,
+                    suggestions: values(suggestionsByUniqueKey)
+                }
+            }));
     })
-    .scan((allPluginSuggestions,singlePluginSuggestion)=>({...allPluginSuggestions,...singlePluginSuggestion}),{});
+    .scan((allPluginSuggestions,singlePluginSuggestion)=>({...allPluginSuggestions,...singlePluginSuggestion}),{})
+    .map(allPluginSuggestions=> values(allPluginSuggestions));
 }
 
 
 function renderSuggestion(pluginSuggestion, { value, valueBeforeUpDown }) {
     const query = (valueBeforeUpDown || value).trim();
-    return plugins[pluginSuggestion.pluginKey].renderSuggestion(pluginSuggestion.suggestion, query);
+    return plugins[pluginSuggestion.pluginKey].renderSuggestion(pluginSuggestion.value, query);
 }
 
+function renderSectionTitle(section) {
+    return (
+        <strong>{section.pluginKey}</strong>
+    );
+}
+
+function getSectionSuggestions(section) {
+    return section.suggestions;
+}
 class App extends React.Component {
     constructor() {
         super();
 
         this.state = {
             value: '',
-            suggestions: {}
+            suggestions: []
         };
 
         this.subs = undefined;
@@ -77,7 +93,7 @@ class App extends React.Component {
         if (self.subs) self.subs.dispose();
 
         this.setState({
-            suggestions: {}
+            suggestions: []
         });
 
         var pluginsSuggestions = getSuggestions(value);
@@ -100,15 +116,17 @@ class App extends React.Component {
             onChange: this.onChange
         };
 
-        var flatSuggestions = values(suggestions);
-        var suggestionsArray = flatSuggestions.length > 0 ? flatSuggestions.reduce((a,b)=> [...a,...b]) : flatSuggestions;
 
         return (
-            <Autosuggest suggestions={suggestionsArray}
-                         onSuggestionsUpdateRequested={this.onSuggestionsUpdateRequested}
-                         getSuggestionValue={()=>""}
-                         renderSuggestion={renderSuggestion}
-                         inputProps={inputProps}/>
+            <Autosuggest
+                multiSection={true}
+                suggestions={suggestions}
+                onSuggestionsUpdateRequested={this.onSuggestionsUpdateRequested}
+                getSuggestionValue={()=>""}
+                renderSuggestion={renderSuggestion}
+                renderSectionTitle={renderSectionTitle}
+                getSectionSuggestions={getSectionSuggestions}
+                inputProps={inputProps}/>
         );
     }
 }
