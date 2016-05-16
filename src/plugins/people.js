@@ -31,23 +31,18 @@ const people = [
 ];
 
 
-function getPeopleFromNetwork(name){
-    return Observable.from(people).filter(({first})=> first.toLowerCase().match(name));
-}
+const getPeopleFromNetwork = name => Observable.from(people).filter(({first})=> first.toLowerCase().match(name));
 
-function getPeople(name){
-    const getPersonLiveFeed = person =>
-        Observable.interval(1000)
-            .map(x=> ({
-                    key: person.key,
-                    first: (person.first + '-' + x),
-                    last: person.last,
-                    twitter: person.twitter
-                })
-            );
-    return getPeopleFromNetwork(name)
-        .flatMap(person=> getPersonLiveFeed(person));
-}
+const getPersonLiveFeed = person =>
+    Observable.interval(1000)
+        .map(x=> ({
+                key: person.key,
+                first: (person.first + '-' + x),
+                last: person.last,
+                twitter: person.twitter
+            })
+        );
+
 
 var peoplePlugin = {
     getName(){
@@ -55,9 +50,12 @@ var peoplePlugin = {
     },
 
     getSuggestions(query){
-        return getPeople(query);
+        return getPeopleFromNetwork(query);
     },
 
+    reviveSuggestion(suggestion){
+        return getPersonLiveFeed(suggestion);
+    },
     renderSuggestion(suggestion,query){
         const suggestionText = `${suggestion.first} ${suggestion.last}`;
         const matches = AutosuggestHighlight.match(suggestionText, query);

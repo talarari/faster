@@ -4,21 +4,47 @@ import {Observable} from 'rx'
 
 import * as plugins  from './plugins/index';
 
+const values = map => Object.keys(map).map(x=> map[x]);
 
+function guid() {
+    function s4() {
+        return Math.floor((1 + Math.random()) * 0x10000)
+            .toString(16)
+            .substring(1);
+    }
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+        s4() + '-' + s4() + s4() + s4();
+}
 function getSuggestions(query) {
+    return Observable.from(Object.keys(plugins))
+    .flatMap(pluginKey=>{
+        let plugin = plugins[pluginKey];
+        const reviveSuggestion = s => plugin.reviveSuggestion ? plugin.reviveSuggestion(s) : Observable.just(s);
 
-    return Observable.merge(Object.keys(plugins).map(key=> {
-        return plugins[key].getSuggestions(query)
-            .map(x=> ({
-                pluginSuggestion: x,
-                pluginKey: key
-            }))
-    }));
+        return plugin.getSuggestions(query)
+            .flatMap(s=> {
+                let suggestionKey = guid();
+                return reviveSuggestion(s)
+                    .map(s=>({
+                        suggestion: s,
+                        pluginKey: pluginKey,
+                        suggestionKey: suggestionKey
+                    }));
+            })
+            .scan((acc,{suggestion,pluginKey,suggestionKey})=> ({...acc,
+                [suggestionKey]:{
+                    suggestion,
+                    pluginKey
+                }}),{})
+            .map(suggestionsByUniqueKey=> ({[pluginKey]:values(suggestionsByUniqueKey)}));
+    })
+    .scan((allPluginSuggestions,singlePluginSuggestion)=>({...allPluginSuggestions,...singlePluginSuggestion}),{});
 }
 
-function renderSuggestion(suggestion, { value, valueBeforeUpDown }) {
+
+function renderSuggestion(pluginSuggestion, { value, valueBeforeUpDown }) {
     const query = (valueBeforeUpDown || value).trim();
-    return plugins[suggestion.pluginKey].renderSuggestion(suggestion.pluginSuggestion, query);
+    return plugins[pluginSuggestion.pluginKey].renderSuggestion(pluginSuggestion.suggestion, query);
 }
 
 class App extends React.Component {
@@ -50,18 +76,17 @@ class App extends React.Component {
         var self = this;
         if (self.subs) self.subs.dispose();
 
+        this.setState({
+            suggestions: {}
+        });
+
         var pluginsSuggestions = getSuggestions(value);
 
         this.subs = pluginsSuggestions
-            .finally(()=> {
-                this.setState({
-                    suggestions: {}
-                });
-            })
+            .do(x=> console.log(JSON.stringify(x,null,2)))
             .subscribe(x=> {
-                self.state.suggestions[x.key] = x;
                 this.setState({
-                    suggestions: self.state.suggestions
+                    suggestions: x
                 });
             });
 
@@ -75,7 +100,8 @@ class App extends React.Component {
             onChange: this.onChange
         };
 
-        var suggestionsArray = Object.keys(suggestions).map(i=>suggestions[i]);
+        var flatSuggestions = values(suggestions);
+        var suggestionsArray = flatSuggestions.length > 0 ? flatSuggestions.reduce((a,b)=> [...a,...b]) : flatSuggestions;
 
         return (
             <Autosuggest suggestions={suggestionsArray}
