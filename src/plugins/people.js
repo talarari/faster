@@ -1,6 +1,5 @@
 import {Observable} from 'rx';
 import React, { Component } from 'react';
-import AutosuggestHighlight from 'autosuggest-highlight'
 
 
 const people = [
@@ -36,10 +35,13 @@ const getPeopleFromNetwork = name => Observable.from(people).filter(({first})=> 
 const getPersonLiveFeed = person =>
     Observable.interval(1000)
         .map(x=> ({
-                key: person.key,
-                first: (person.first + '-' + x),
-                last: person.last,
-                twitter: person.twitter
+                description: person.first + '-' + x,
+                data:{
+                    key: person.key,
+                    first: (person.first + '-' + x),
+                    last: person.last,
+                    twitter: person.twitter
+                }
             })
         );
 

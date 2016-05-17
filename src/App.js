@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import Autosuggest from 'react-autosuggest';
 import {Observable} from 'rx'
+import AutosuggestHighlight from 'autosuggest-highlight'
 
 import * as plugins  from './plugins/index';
 
@@ -51,7 +52,24 @@ function getSuggestions(query) {
 
 function renderSuggestion(pluginSuggestion, { value, valueBeforeUpDown }) {
     const query = (valueBeforeUpDown || value).trim();
-    return plugins[pluginSuggestion.pluginKey].renderSuggestion(pluginSuggestion.value, query);
+
+    const suggestionText = pluginSuggestion.value.description;
+    const matches = AutosuggestHighlight.match(suggestionText, query);
+    const parts = AutosuggestHighlight.parse(suggestionText, matches);
+
+    return (
+        <span>
+        {
+            parts.map((part, index) => {
+                const className = part.highlight ? 'highlight' : null;
+
+                return (
+                    <span className={className} key={index}>{part.text}</span>
+                );
+            })
+        }
+      </span>
+    );
 }
 
 function renderSectionTitle(section) {
@@ -63,6 +81,8 @@ function renderSectionTitle(section) {
 function getSectionSuggestions(section) {
     return section.suggestions;
 }
+
+
 class App extends React.Component {
     constructor() {
         super();
