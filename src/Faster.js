@@ -145,7 +145,7 @@ class Faster extends React.Component {
                 renderSectionTitle={renderSectionTitle}
                 getSectionSuggestions={getSectionSuggestions}
                 inputProps={inputProps}/>
-        );
+        );  
     }
 }
 

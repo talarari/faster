@@ -6,8 +6,7 @@ class App extends React.Component {
     render() {
 
         return (
-            <Faster
-                plugins={plugins}/>
+            <Faster plugins={plugins}/>
         );
     }
 }
