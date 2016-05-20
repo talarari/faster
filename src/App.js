@@ -119,7 +119,7 @@ class App extends React.Component {
         var pluginsSuggestions = getSuggestions(value);
 
         this.subs = pluginsSuggestions
-            .do(x=> console.log(JSON.stringify(x,null,2)))
+            // .do(x=> console.log(JSON.stringify(x,null,2)))
             .subscribe(x=> {
                 this.setState({
                     suggestions: x
