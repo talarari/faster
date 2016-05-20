@@ -142,7 +142,7 @@ class App extends React.Component {
                 multiSection={true}
                 suggestions={suggestions}
                 onSuggestionsUpdateRequested={this.onSuggestionsUpdateRequested}
-                getSuggestionValue={()=>""}
+                getSuggestionValue={s=>value}
                 renderSuggestion={renderSuggestion}
                 renderSectionTitle={renderSectionTitle}
                 getSectionSuggestions={getSectionSuggestions}
