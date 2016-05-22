@@ -48,7 +48,19 @@ function getSuggestions(plugins,query) {
 }
 
 
+function renderSectionTitle(section) {
+    return (
+        <strong>{section.pluginKey}</strong>
+    );
+}
+
+function getSectionSuggestions(section) {
+    return section.suggestions;
+}
+
 function renderSuggestion(pluginSuggestion, { value, valueBeforeUpDown }) {
+
+
     const query = (valueBeforeUpDown || value).trim();
 
     const suggestionText = pluginSuggestion.value.description;
@@ -69,17 +81,10 @@ function renderSuggestion(pluginSuggestion, { value, valueBeforeUpDown }) {
       </span>
     );
 }
-
-function renderSectionTitle(section) {
-    return (
-        <strong>{section.pluginKey}</strong>
-    );
-}
-
-function getSectionSuggestions(section) {
-    return section.suggestions;
-}
-
+const FasterPreview = ({children}) =>
+    <div className="faster-suggestion-preview">
+        {children}
+    </div>;
 
 class Faster extends React.Component {
     constructor() {
@@ -93,6 +98,7 @@ class Faster extends React.Component {
         this.subs = undefined;
         this.onChange = this.onChange.bind(this);
         this.onSuggestionsUpdateRequested = this.onSuggestionsUpdateRequested.bind(this);
+        this.getSuggestionValue = this.getSuggestionValue.bind(this);
     }
 
     componentWillUnmount() {
@@ -126,8 +132,17 @@ class Faster extends React.Component {
 
     }
 
+
+
+    getSuggestionValue(suggestion){
+        this.setState({
+            focusedSuggestion: suggestion
+        });
+        return this.state.value;
+    }
+
     render() {
-        const { value, suggestions } = this.state;
+        const { value, suggestions, focusedSuggestion  } = this.state;
         const inputProps = {
             placeholder: "Type 'c'",
             value,
@@ -135,17 +150,33 @@ class Faster extends React.Component {
         };
 
 
+        const suggestionPreview = focusedSuggestion ?
+                <div>{focusedSuggestion.value.description}</div> :
+                <div>hello</div>;
+
+
+
         return (
-            <Autosuggest
-                multiSection={true}
-                suggestions={suggestions}
-                onSuggestionsUpdateRequested={this.onSuggestionsUpdateRequested}
-                getSuggestionValue={s=>value}
-                renderSuggestion={renderSuggestion}
-                renderSectionTitle={renderSectionTitle}
-                getSectionSuggestions={getSectionSuggestions}
-                inputProps={inputProps}/>
-        );  
+            <div className="faster-container">
+                <Autosuggest
+                    multiSection={true}
+                    suggestions={suggestions}
+                    onSuggestionsUpdateRequested={this.onSuggestionsUpdateRequested}
+                    getSuggestionValue={s=>{
+                      this.setState({
+                            focusedSuggestion: s
+                        });
+                        return value;
+                    }}
+                    renderSuggestion={renderSuggestion}
+                    renderSectionTitle={renderSectionTitle}
+                    getSectionSuggestions={getSectionSuggestions}
+                    inputProps={inputProps}/>
+                <FasterPreview>
+                    {suggestionPreview}
+                </FasterPreview>
+            </div>
+    );
     }
 }
 
